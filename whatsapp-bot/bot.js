@@ -72,7 +72,29 @@ client.on('message', async (msg) => {
       } else {
         await client.sendMessage(msg.from, '❌ Товар не найден. Напиши "каталог", чтобы посмотреть список.');
       }
+    // } else if (/^хочу\s+\d+$/.test(text)) {
     } else if (/^хочу\s+\d+$/.test(text)) {
+  const ADMIN_CHAT_ID = '79196465074@c.us';
+  const selectedId = parseInt(text.split(' ')[1]);
+  const product = products.find(p => p.id === selectedId);
+
+  if (product) {
+    // Сообщение пользователю
+    await client.sendMessage(
+      msg.from,
+      `🎉 Отличный выбор!\nМы зафиксировали ваш интерес к "${product.name}" за ${product.price}. Менеджер свяжется с вами.`
+    );
+
+    // Уведомление админу
+    await client.sendMessage(
+      ADMIN_CHAT_ID,
+      `📥 Новый заказ:\n👤 От: ${msg.from}\n🛍️ Товар: ${product.name}\n💰 Цена: ${product.price}`
+    );
+  } else {
+    await client.sendMessage(msg.from, '❌ Не удалось найти товар. Проверь номер и попробуй снова.');
+  }
+}
+
       const selectedId = parseInt(text.split(' ')[1]);
       const product = products.find(p => p.id === selectedId);
 
