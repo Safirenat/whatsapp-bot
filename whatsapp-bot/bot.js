@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
@@ -78,9 +77,11 @@ client.on('message', async (msg) => {
       const product = products.find(p => p.id === selectedId);
 
       if (product) {
+        const paymentLink = `https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=${encodeURIComponent(product.name)}&default-sum=${product.price}&button-text=11&payment-type-choice=on&label=order-${product.id}`;
+
         await client.sendMessage(
           msg.from,
-          `🎉 Отличный выбор!\nМы зафиксировали ваш интерес к "${product.name}" за ${product.price}. Менеджер свяжется с вами.`
+          `🎉 Отличный выбор!\nТовар: *${product.name}* за *${product.price}₽*\n\n💳 Перейдите к оплате:\n${paymentLink}`
         );
       } else {
         await client.sendMessage(msg.from, '❌ Не удалось найти товар. Проверь номер и попробуй снова.');
