@@ -9,6 +9,8 @@ app.use(bodyParser.json());
 
 let isReady = false;
 
+const ADMIN_CHAT_ID = '79196465074@c.us';
+
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'my-bot-session' }),
   puppeteer: {
@@ -48,12 +50,18 @@ client.on('message', async (msg) => {
 
     if (text === 'привет') {
       await client.sendMessage(msg.from, 'Привет! Напиши "каталог", чтобы получить список товаров.');
-    } else if (text === 'каталог') {
+      return;
+    }
+
+    if (text === 'каталог') {
       await client.sendMessage(
         msg.from,
         '📦 Каталог:\n1. Стол — 5000₽\n2. Стул — 2000₽\n3. Полка — 1500₽\n\nНапиши номер, чтобы узнать подробнее, или "хочу [номер]" для заказа.'
       );
-    } else if (/^\d+$/.test(text)) {
+      return;
+    }
+
+    if (/^\d+$/.test(text)) {
       const selectedId = parseInt(text);
       const product = products.find(p => p.id === selectedId);
 
@@ -72,45 +80,37 @@ client.on('message', async (msg) => {
       } else {
         await client.sendMessage(msg.from, '❌ Товар не найден. Напиши "каталог", чтобы посмотреть список.');
       }
-    // } else if (/^хочу\s+\d+$/.test(text)) {
-    } else if (/^хочу\s+\d+$/.test(text)) {
-  const ADMIN_CHAT_ID = '79196465074@c.us';
-  const selectedId = parseInt(text.split(' ')[1]);
-  const product = products.find(p => p.id === selectedId);
+      return;
+    }
 
-  if (product) {
-    // Сообщение пользователю
-    await client.sendMessage(
-      msg.from,
-      `🎉 Отличный выбор!\nМы зафиксировали ваш интерес к "${product.name}" за ${product.price}. Менеджер свяжется с вами.`
-    );
-
-    // Уведомление админу
-    await client.sendMessage(
-      ADMIN_CHAT_ID,
-      `📥 Новый заказ:\n👤 От: ${msg.from}\n🛍️ Товар: ${product.name}\n💰 Цена: ${product.price}`
-    );
-  } else {
-    await client.sendMessage(msg.from, '❌ Не удалось найти товар. Проверь номер и попробуй снова.');
-  }
-}
-
+    if (/^хочу\s+\d+$/.test(text)) {
       const selectedId = parseInt(text.split(' ')[1]);
       const product = products.find(p => p.id === selectedId);
 
       if (product) {
-        const paymentLink = `https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=${encodeURIComponent(product.name)}&default-sum=${product.price}&button-text=11&payment-type-choice=on&label=order-${product.id}`;
-
+        // Пользователю
         await client.sendMessage(
           msg.from,
-          `🎉 Отличный выбор!\nТовар: *${product.name}* за *${product.price}₽*\n\n💳 Перейдите к оплате:\n${paymentLink}`
+          `🎉 Отличный выбор!\nМы зафиксировали ваш интерес к "${product.name}" за ${product.price}. Менеджер свяжется с вами.`
         );
+
+        // Администратору
+        await client.sendMessage(
+          ADMIN_CHAT_ID,
+          `📥 Новый заказ:\n👤 От: ${msg.from}\n🛍️ Товар: ${product.name}\n💰 Цена: ${product.price}`
+        );
+
+        // Заглушка оплаты
+        const paymentLink = `https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=${encodeURIComponent(product.name)}&default-sum=${product.price}&button-text=11&payment-type-choice=on&label=order-${product.id}`;
+        await client.sendMessage(msg.from, `💳 Для оплаты перейдите по ссылке:\n${paymentLink}`);
       } else {
         await client.sendMessage(msg.from, '❌ Не удалось найти товар. Проверь номер и попробуй снова.');
       }
-    } else {
-      await client.sendMessage(msg.from, '🤖 Я бот. Напиши "каталог", номер товара или "хочу [номер]".');
+      return;
     }
+
+    // Если ничего не подошло
+    await client.sendMessage(msg.from, '🤖 Я бот. Напиши "каталог", номер товара или "хочу [номер]".');
   } catch (err) {
     console.error('❌ Ошибка при ответе на сообщение:', err.message);
   }
